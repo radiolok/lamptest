@@ -4,17 +4,17 @@
 #include "lamprom.h"
 
 unsigned char currentLampNum;
+unsigned char tick_1ms; //Used for blocked 1ms delay
+
 unsigned char
 	d,
 	i,
-	busy,
 	sync,
 	txen,
 	*cwart, cwartmin, cwartmax,
 	adr, adrmin, adrmax,
 	nowa,
 	stop,
-	zwloka,
 	dziel,
 	nodus, dusk0,
 	zapisz, czytaj,
@@ -72,30 +72,10 @@ void readPgmLampData(unsigned char _currentLampNum, katalog_t *lampData)
 //                 F U N K C J E  P O M O C N I C Z E
 //*************************************************************************
 
-void char2rs(unsigned char bajt)
-{
-	UDR = bajt;
-	busy = 1;
-	while (busy)
-		; // czekaj na koniec wysylania bajtu
-}
-
-void cstr2rs(const char *q)
-{
-	while (*q) // do konca stringu
-	{
-		UDR = *q;
-		q++;
-		busy = 1;
-		while (busy)
-			; // czekaj na koniec wysylania bajtu
-	}
-}
-
 void delay(unsigned char opoz) // opoznienie *1ms
 {
-	zwloka = opoz + 1;
-	while (zwloka != 0)
+	tick_1ms = opoz + 1;
+	while (tick_1ms != 0)
 		;
 }
 
@@ -653,22 +633,11 @@ ISR(ADC_vect)
 	//	NOP;
 }
 
-ISR(USART_TXC_vect)
-{
-	busy = 0;
-}
-
-ISR(USART_RXC_vect)
-{
-	if (UDR == ESC)
-		txen = 1;
-}
-
 ISR(TIMER2_COMP_vect)
 {
-	if (zwloka != 0)
+	if (tick_1ms != 0)
 	{
-		zwloka--;
+		tick_1ms--;
 	}
 
 	if (DUSK0)
@@ -1123,9 +1092,7 @@ int main(void)
 		//***** Wyswietlanie Numeru ***********************************
 		if (adr == 0) // ustawianie numeru
 		{
-			int2asc(currentLampNum, ascii);
-			buf[0] = ascii[1];
-			buf[1] = ascii[0];
+			fp2ascii(currentLampNum, 2, 0, &buf[0]);
 			//***** Pobieranie nowej Nazwy ************************************
 			if (currentLampNum < FLAMP)
 			{
@@ -1203,11 +1170,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ug1 **************************************
-		int2asc((unsigned int)licz, ascii);
-		buf[23] = (ascii[2] != '0') ? ascii[2] : ' ';
-		buf[24] = ascii[1];
-		buf[25] = '.';
-		buf[26] = ascii[0];
+		fp2ascii((unsigned int)licz, 2, 1, &buf[23]);
 		//***** Ustawianie Uh *****************************************
 		licz = muhadc;
 		licz *= vref;
@@ -1247,11 +1210,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Uh ***************************************
-		int2asc((unsigned int)licz, ascii);
-		buf[13] = (ascii[2] != '0') ? ascii[2] : ' ';
-		buf[14] = ascii[1];
-		buf[15] = '.';
-		buf[16] = ascii[0];
+		fp2ascii((unsigned int)licz, 2, 1, &buf[13]);
 		//***** Ustawianie Ih *****************************************
 		licz = mihadc;
 		licz *= vref;
@@ -1281,27 +1240,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ih ***************************************
-		int2asc((unsigned int)licz, ascii);
-		if (ascii[2] != '0')
-		{
-			buf[18] = ascii[2];
-			buf[19] = ascii[1];
-			buf[20] = ascii[0];
-		}
-		else
-		{
-			buf[18] = ' ';
-			if (ascii[1] != '0')
-			{
-				buf[19] = ascii[1];
-				buf[20] = ascii[0];
-			}
-			else
-			{
-				buf[19] = ' ';
-				buf[20] = (ascii[0] != '0') ? ascii[0] : ' ';
-			}
-		}
+		fp2ascii(licz, 3, 0, &buf[18]);
 		buf[21] = '0';
 		//***** Ustawianie Ua *****************************************
 		licz = muaadc;
@@ -1331,18 +1270,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ua ***************************************
-		int2asc((unsigned int)licz, ascii);
-		if (ascii[2] != '0')
-		{
-			buf[28] = ascii[2];
-			buf[29] = ascii[1];
-		}
-		else
-		{
-			buf[28] = ' ';
-			buf[29] = (ascii[1] != '0') ? ascii[1] : ' ';
-		}
-		buf[30] = ascii[0];
+		fp2ascii(licz, 3, 0, &buf[28]);
 		//***** Ustawianie Ia ***************************************
 		licz = miaadc;
 		licz *= vref;
@@ -1382,30 +1310,13 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ia ***************************************
-		int2asc((unsigned int)licz, ascii);
 		if ((rangedef == 0) && (((start != (FUH + 2)) && (range == 0)) || ((start == (FUH + 2)) && (rangelcd == 0))))
 		{
-			buf[32] = (ascii[3] != '0') ? ascii[3] : ' ';
-			buf[33] = ascii[2];
-			buf[34] = '.';
-			buf[35] = ascii[1];
-			buf[36] = ascii[0];
+			fp2ascii(licz, 2, 2, &buf[32]);
 		}
 		else
 		{
-			if (ascii[3] != '0')
-			{
-				buf[32] = ascii[3];
-				buf[33] = ascii[2];
-			}
-			else
-			{
-				buf[32] = ' ';
-				buf[33] = (ascii[2] != '0') ? ascii[2] : ' ';
-			}
-			buf[34] = ascii[1];
-			buf[35] = '.';
-			buf[36] = ascii[0];
+			fp2ascii(licz, 3, 1, &buf[32]);
 		}
 		//***** Ustawianie Ug2 ****************************************
 		licz = mug2adc;
@@ -1435,18 +1346,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ug2 **************************************
-		int2asc((unsigned int)licz, ascii);
-		if (ascii[2] != '0')
-		{
-			buf[38] = ascii[2];
-			buf[39] = ascii[1];
-		}
-		else
-		{
-			buf[38] = ' ';
-			buf[39] = (ascii[1] != '0') ? ascii[1] : ' ';
-		}
-		buf[40] = ascii[0];
+		fp2ascii(licz, 3, 0, &buf[38]);
 		//***** Ustawianie Ig2 **************************************
 		licz = mig2adc;
 		licz *= vref;
@@ -1481,12 +1381,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie Ig2 **************************************
-		int2asc((unsigned int)licz, ascii);
-		buf[42] = (ascii[3] != '0') ? ascii[3] : ' ';
-		buf[43] = ascii[2];
-		buf[44] = '.';
-		buf[45] = ascii[1];
-		buf[46] = ascii[0];
+		fp2ascii(licz, 2, 2, &buf[42]);
 		//***** Ustawianie S ****************************************
 		licz = s;
 		if (start == (FUH + 2))
@@ -1508,11 +1403,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie S ****************************************
-		int2asc(licz, ascii);
-		buf[48] = (ascii[2] != '0') ? ascii[2] : ' ';
-		buf[49] = ascii[1];
-		buf[50] = '.';
-		buf[51] = ascii[0];
+		fp2ascii((unsigned int)licz, 2, 1, &buf[48]);
 		//***** Ustawianie R ****************************************
 		licz = r;
 		if (start == (FUH + 2))
@@ -1534,11 +1425,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie R ****************************************
-		int2asc(licz, ascii);
-		buf[53] = (ascii[2] != '0') ? ascii[2] : ' ';
-		buf[54] = ascii[1];
-		buf[55] = '.';
-		buf[56] = ascii[0];
+		fp2ascii((unsigned int)licz, 2, 1, &buf[53]);
 		//***** Ustawianie K ****************************************
 		licz = k;
 		if (start == (FUH + 2))
@@ -1560,11 +1447,7 @@ int main(void)
 			}
 		}
 		//***** Wyswietlanie K ****************************************
-		int2asc(licz, ascii);
-		buf[58] = (ascii[2] != '0') ? ascii[2] : ' ';
-		buf[59] = ascii[1];
-		buf[60] = '.';
-		buf[61] = ascii[0];
+		fp2ascii((unsigned int)licz, 2, 1, &buf[58]);
 		//***** Wyslanie pomiarow do PC *******************************
 		if (txen)
 		{

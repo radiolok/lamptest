@@ -1,21 +1,17 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-    void int2asc(unsigned int liczba, unsigned char* ascii)
-    {
-        unsigned char
-            i,
-            temp;
+#include "definitions.h"
 
-        for (i = 0; i < 4; i++)
-        {
-            temp = liczba % 10;
-            liczba /= 10;
-            ascii[i] = '0' + temp;
-        }
-    }
+unsigned char temp_str[5];
 
+void cstr2rs(const char *q);
+void char2rs(unsigned char data);
 
-    //void fixedPoint2Ascii(unsigned int liczba, unsigned char* ascii)
+void int2asc(unsigned int liczba, unsigned char* ascii);
 
+void fp2ascii(unsigned int num,
+                unsigned char integral,
+                unsigned char frac,
+                unsigned char *to);
 #endif
