@@ -62,6 +62,18 @@ void cstr2rs(const char *q)
 	}
 }
 
+unsigned char txen;
+
+void setTxen(const unsigned char state)
+{
+	txen = state;
+}
+
+unsigned char getTxen(void)
+{
+	return txen;
+}
+
 ISR(USART_TXC_vect)
 {
 	uart_busy = 0;

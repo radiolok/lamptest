@@ -10,7 +10,6 @@ unsigned char
 	d,
 	i,
 	sync,
-	txen,
 	*cwart, cwartmin, cwartmax,
 	adr, adrmin, adrmax,
 	nowa,
@@ -803,7 +802,7 @@ ISR(TIMER2_COMP_vect)
 			slcd = s;
 			rlcd = r;
 			klcd = k;
-			txen = 1;
+			setTxen(1);
 		}
 		if (start == ((FUG2 + FUA + FUG + (BIP - 0) + FUH + 2)))
 		{
@@ -1449,7 +1448,7 @@ int main(void)
 		//***** Wyswietlanie K ****************************************
 		fp2ascii((unsigned int)licz, 2, 1, &buf[58]);
 		//***** Wyslanie pomiarow do PC *******************************
-		if (txen)
+		if (getTxen())
 		{
 			eeprom_write_word(&poptyp, currentLampNum);
 			cstr2rs("\r\n");
@@ -1460,7 +1459,7 @@ int main(void)
 				else
 					cstr2rs("  ");
 			}
-			txen = 0;
+			setTxen(0);
 		}
 	}
 }
