@@ -1,4 +1,4 @@
-name: Build firmware
+name: Build and test firmware
 
 on:
   push:
@@ -31,3 +31,22 @@ jobs:
             build/avt5529/avt5229.eep
             build/avt5529/avt5229.elf
             build/avt5529/avt5229.map
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build-tests -G Ninja -DLAMPTEST_TESTS=ON -DWERROR=ON
+
+      - name: Build
+        run: cmake --build build-tests
+
+      - name: Run unit tests
+        run: ctest --test-dir build-tests --output-on-failure

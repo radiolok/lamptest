@@ -1,71 +1,64 @@
+#include "board.h"
 #include "lcd.h"
 
-//*************************************************************************
-//                 O B S L U G A   W Y S W I E T L A C Z A
-//*************************************************************************
+static uint8_t blink_phase;     // characters are blanked in phase 0
 
-unsigned char _blink = 0;
+#define NOP2() __asm__ __volatile__("rjmp .+0")
 
-void lcdBlink(unsigned char flag){
-    _blink++;
-    _blink &= 0x03;
-    if ((_blink == 2) && (flag))
-        _blink = 0;
+static void pulse_enable(void)
+{
+    PORTC |= BIT(PC_LCD_E);
+    NOP2();
+    NOP2();
+    NOP2();
+    NOP2();
+    PORTC &= ~BIT(PC_LCD_E);
 }
 
-void cmd2lcd(char rs, char bajt)
+static void lcd_write(uint8_t rs, uint8_t byte)
 {
-	delay(1);
-	if (rs)
-	{
-		RSSET;
-	}
-	else
-	{
-		RSRST;
-	}
-	PORTC &= 0x0f;
-	PORTC |= (bajt & 0xf0);
-	ENSET;
-	NOP2;
-	NOP2;
-	NOP2;
-	NOP2;
-	ENRST;
-	PORTC &= 0x0f;
-	PORTC |= ((bajt << 4) & 0xf0);
-	ENSET;
-	NOP2;
-	NOP2;
-	NOP2;
-	NOP2;
-	ENRST;
+    delay_ms(1);
+    if (rs)
+        PORTC |= BIT(PC_LCD_RS);
+    else
+        PORTC &= ~BIT(PC_LCD_RS);
+
+    PORTC = (PORTC & ~PC_LCD_DATA) | (byte & 0xF0);
+    pulse_enable();
+    PORTC = (PORTC & ~PC_LCD_DATA) | (byte << 4);
+    pulse_enable();
 }
 
-void gotoxy(char x, char y)
+void lcd_init(void)
 {
-	cmd2lcd(0, 0x80 | (64 * (y % 2) + 20 * (y / 2) + x)); // 4x20
+    delay_ms(30);
+    lcd_write(0, 0x28);     // 4-bit bus, 2 lines, 5x8 font
+    lcd_write(0, 0x06);     // increment, no shift
+    lcd_write(0, 0x0C);     // display on, cursor off
+    lcd_write(0, 0x01);     // clear
+    lcd_write(0, 0x40);     // CGRAM address 0
 }
 
-void char2lcd(char f, char c)
+void lcd_goto(uint8_t x, uint8_t y)
 {
-	cmd2lcd(1, ((f == 1) && (_blink == 0)) ? ' ' : c);
+    // 4x20: lines 2 and 3 continue lines 0 and 1
+    lcd_write(0, 0x80 | (64 * (y % 2) + 20 * (y / 2) + x));
 }
 
-void cstr2lcd(char f, const unsigned char *c)
+void lcd_putc(uint8_t blink, char c)
 {
-	while (*c)
-	{
-		char2lcd(f, *c);
-		c++;
-	}
+    lcd_write(1, (blink && blink_phase == 0) ? ' ' : c);
 }
 
-void str2lcd(char f, unsigned char *c)
+void lcd_puts(uint8_t blink, const char *s)
 {
-	while (*c)
-	{
-		char2lcd(f, *c);
-		c++;
-	}
+    while (*s)
+        lcd_putc(blink, *s++);
+}
+
+void lcd_blink_tick(uint8_t fast)
+{
+    blink_phase = (blink_phase + 1) & 0x03;
+    if (blink_phase == 2 && fast)
+        blink_phase = 0;
 }

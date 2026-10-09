@@ -131,10 +131,70 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="definitions.h">
+    <Compile Include="adc_scan.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="lamprom.h">
+    <Compile Include="adc_scan.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="app.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="app.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="board.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="board.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="button.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="button.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="config.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="control.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="control.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="convert.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="convert.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="editor.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="editor.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="format.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="format.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="hal.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lamp.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lamp.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lampdb.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="lampdb.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="lcd.c">
@@ -143,13 +203,31 @@
     <Compile Include="lcd.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="avt5229.c">
+    <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="util.c">
+    <Compile Include="panel.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="util.h">
+    <Compile Include="panel.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sequencer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sequencer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="uart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ui.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ui.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

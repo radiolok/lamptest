@@ -3,9 +3,22 @@ set(MCU   atmega32)
 set(F_CPU 16000000UL)
 
 add_executable(avt5229
-    avt5229.c
+    main.c
+    adc_scan.c
+    app.c
+    board.c
+    button.c
+    control.c
+    convert.c
+    editor.c
+    format.c
+    lamp.c
+    lampdb.c
     lcd.c
-    util.c
+    panel.c
+    sequencer.c
+    uart.c
+    ui.c
 )
 set_target_properties(avt5229 PROPERTIES SUFFIX ".elf")
 
@@ -22,7 +35,7 @@ target_compile_options(avt5229 PRIVATE
     -fno-common
     -Wall
     -Wextra
-    -Wno-missing-braces   # lamprom.h initialises name[9] without inner braces
+    -Wno-missing-braces   # lampdb.c initialises name[9] without inner braces
     $<$<BOOL:${WERROR}>:-Werror>
 )
 target_compile_definitions(avt5229 PRIVATE F_CPU=${F_CPU})

@@ -1,16 +1,19 @@
 #ifndef LCD_H
 #define LCD_H
 
-    #include "definitions.h"
+#include <stdint.h>
 
-    void delay(unsigned char opoz); // defined in avt5229.c
+// HD44780 4x20 character LCD, 4-bit bus on PORTC
 
-    void lcdBlink(unsigned char flag);
+void lcd_init(void);
+void lcd_goto(uint8_t x, uint8_t y);
 
-    void cmd2lcd(char rs, char bajt);
-    void gotoxy(char x, char y);
-    void char2lcd(char f, char c);
-    void cstr2lcd(char f, const unsigned char *c);
-    void str2lcd(char f, unsigned char *c);
+// With `blink` set the character is replaced by a space during the off
+// phase, which marks the field being edited.
+void lcd_putc(uint8_t blink, char c);
+void lcd_puts(uint8_t blink, const char *s);
+
+// Advance the blink phase, every 250 ms. `fast` blinks at 2 Hz instead of 1 Hz.
+void lcd_blink_tick(uint8_t fast);
 
 #endif

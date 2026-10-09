@@ -2,3 +2,4 @@ build/
 *-backups/
 *.kicad_prl.lck
 ~*.lck
+build-*/

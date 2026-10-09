@@ -39,8 +39,8 @@ measures the tube's static parameters and its small-signal parameters:
 The sequence runs in 250 ms ticks, driven by `TIMER2_COMP_vect`:
 
 1. Switch on the heater, then wait out the warm-up time (1–9 min, set per tube).
-2. Set U<sub>g1</sub> = U<sub>g</sub> − 1.1 V, then ramp up U<sub>a</sub> and U<sub>g2</sub>. Read I<sub>a</sub>.
-3. Set U<sub>g1</sub> = U<sub>g</sub> + 1.1 V and read I<sub>a</sub> again. This gives **S**.
+2. Make U<sub>g1</sub> slightly more negative than U<sub>g</sub> (11 ADC steps, about 0.4 V), then ramp up U<sub>a</sub> and U<sub>g2</sub>. Read I<sub>a</sub> and U<sub>g1</sub>.
+3. Make U<sub>g1</sub> the same amount less negative than U<sub>g</sub>, and read I<sub>a</sub> and U<sub>g1</sub> again. This gives **S**.
 4. Return U<sub>g1</sub> to U<sub>g</sub>. Read I<sub>a</sub> at U<sub>a</sub> − 10 V and at U<sub>a</sub> + 10 V. This gives **R**, and **K** = S·R.
 5. Latch the results on the LCD and send them over RS-232.
 6. Ramp down U<sub>g2</sub>, U<sub>a</sub> and U<sub>g1</sub>, beep, and switch off the heater.
@@ -154,49 +154,56 @@ measurements that go to the ADC (port A).
 
 ## Firmware structure
 
+The firmware lives in [`avt5529/`](avt5529). The logic modules do not touch
+the hardware. They reach the outputs through [`hal.h`](avt5529/hal.h), which
+is inline register code on the AVR and a fake in the host tests.
+
 | File | Contents |
 |---|---|
-| [`avt5229.c`](avt5529/avt5229.c) | `main()`, the interrupt handlers, the measurement sequencer, unit conversion and the editor |
-| [`lcd.c`](avt5529/lcd.c) | HD44780 driver in 4-bit mode, and blinking of the field being edited |
-| [`util.c`](avt5529/util.c) | Number formatting, the UART driver, and the `ESC` handler |
-| [`lamprom.h`](avt5529/lamprom.h) | `katalog_t` record, the flash tube table and the EEPROM user table |
-| [`definitions.h`](avt5529/definitions.h) | Pin macros, timing constants, ADC channels and error flags |
+| [`main.c`](avt5529/main.c) | Start-up, the main loop and the interrupt vectors, which only call into the modules |
+| [`adc_scan.c`](avt5529/adc_scan.c) | The 14-step ADC scan: averaging, the U<sub>g1</sub> charge pump, the over-current trips, the U<sub>a</sub>/U<sub>g2</sub> ramps, I<sub>a</sub> auto-range, heater regulation and the over-temperature check |
+| [`control.c`](avt5529/control.c) | Pure control laws used by the scan: ramp, trip filter, range hysteresis and the heater regulator |
+| [`sequencer.c`](avt5529/sequencer.c) | The measurement sequence, with named step points, and the S/R/K calculation |
+| [`button.c`](avt5529/button.c) | Push button debounce: click, held and released |
+| [`editor.c`](avt5529/editor.c) | Encoder handling: moving the cursor, changing values, switching sections and aborting |
+| [`panel.c`](avt5529/panel.c) | Main loop work: loads the selected record, converts the readings, saves edits and renders the report line |
+| [`ui.c`](avt5529/ui.c), [`lcd.c`](avt5529/lcd.c) | LCD screens, and the HD44780 driver in 4-bit mode with field blinking |
+| [`uart.c`](avt5529/uart.c) | Serial output, and the `ESC` request |
+| [`convert.c`](avt5529/convert.c), [`format.c`](avt5529/format.c) | ADC to physical units, S/R/K arithmetic and fixed-point formatting |
+| [`lamp.c`](avt5529/lamp.c), [`lampdb.c`](avt5529/lampdb.c) | The `lamp_t` record and its editable fields; the flash tube table, the EEPROM user table and the last selected slot |
+| [`app.c`](avt5529/app.c) | State shared between the main loop and the interrupts: set points, errors, the selected tube and the live readings |
+| [`config.h`](avt5529/config.h), [`board.h`](avt5529/board.h) | Thresholds and timing constants; pin assignment and the inline hardware access |
+| [`tests/`](avt5529/tests) | Host unit tests |
 
-The firmware is interrupt-driven. The ISRs do all the real-time work: ADC
-sampling, regulation, protections and the measurement timing. The main loop
-only converts the averaged readings into physical units, refreshes the LCD,
-saves edits to EEPROM and sends reports over the serial port. Most of the state
-is shared through global variables.
+The interrupts do all the real-time work. The main loop only converts the
+averaged readings, refreshes the LCD, saves edits to EEPROM and sends reports.
 
 ```mermaid
 flowchart TB
-    subgraph ISRS["Interrupts"]
+    subgraph ISRS["Interrupts (main.c)"]
         direction TB
-        ADCI["<b>ADC_vect</b> · ~9.6 kHz, free-running<br/>14-step channel scan: Ug1 is read on every other<br/>conversion and drives the charge-pump clock<br/>(bang-bang), the other conversions cycle through<br/>Temp, Ih, Uh, Ua, Ia, Ug2 and Ig2<br/>· Ih / Ia / Ig2 overcurrent trip → err<br/>· ramp OCR1B (Ua) / OCR1A (Ug2) by 1 step toward the set value<br/>· Ia auto-range 20 ↔ 200 mA<br/>· every 64 scans (~10 Hz): latch averages,<br/>regulate heater PWM (Uh or Ih), check overtemperature"]
-        T2["<b>TIMER2_COMP_vect</b> · 1 kHz<br/>· delay() tick<br/>· button debounce: short press = start / restart<br/>· every 250 ms: measurement sequencer (start--),<br/>beeps, blink phase, sync = 1"]
-        INT1I["<b>INT1_vect</b> · encoder step<br/>· choose a tube / move between fields<br/>· change the value in the selected field<br/>· turning aborts a measurement"]
-        UARTI["<b>USART_TXC / RXC</b><br/>· TX done flag<br/>· ESC → txen = 1"]
+        ADCI["<b>ADC_vect</b> → adc_scan_sample() · ~9.6 kHz<br/>14-step scan: Ug1 on every other conversion drives<br/>the charge-pump clock, the others cycle through<br/>Temp, Ih, Uh, Ua, Ia, Ug2 and Ig2<br/>· Ih / Ia / Ig2 over-current trip → err<br/>· ramp the Ua / Ug2 PWM toward the set points<br/>· Ia auto-range 20 ↔ 200 mA<br/>· every 64 scans: latch averages, regulate the<br/>heater, check the temperature"]
+        T2["<b>TIMER2_COMP_vect</b> · 1 kHz<br/>· delay_ms() tick<br/>· button_poll(): a click starts or repeats a measurement<br/>· every 250 ms: seq_tick(), LCD blink, redraw"]
+        INT1I["<b>INT1_vect</b> → editor_on_encoder()<br/>· choose a tube / move between fields<br/>· change the value under the cursor<br/>· switch section / abort"]
+        UARTI["<b>USART_TXC / RXC</b> (uart.c)<br/>· TX done · ESC → report_request"]
     end
 
-    subgraph SHARED["Shared state (globals)"]
+    subgraph SHARED["Shared state (app.h)"]
         direction LR
-        M["m*adc averages"]
-        SET["uaset, ug2set, ug1set,<br/>uhset, ihset"]
-        SEQ["start, stop, err, adr"]
-        FL["sync, txen, tick_1ms"]
+        M["ADC averages<br/>(adc_averages())"]
+        SET["sp: set points"]
+        SEQ["sequencer step, err,<br/>lamp, field"]
+        FL["redraw, report_request"]
     end
 
     subgraph MAIN["main()"]
         direction TB
-        INIT["ioSetup(): ports, timers, PWM, ADC, UART, WDT<br/>load last tube from EEPROM · LCD init · splash"]
-        LOOP{{"while (1)"}}
-        DRAW["if sync: draw buf[] on the LCD (4 Hz)"]
-        ABORT["if err: force the switch-off sequence"]
-        LOAD["adr == 0: load the tube record<br/>(flash or EEPROM)"]
-        CONV["m*adc → Ug1, Uh, Ih, Ua, Ia, Ug2, Ig2<br/>(vref scaling, shunt corrections)<br/>fp2ascii() → buf[]"]
-        EDIT["Editing: save the changed field to EEPROM<br/>(user slots 81–99)"]
-        TX["if txen: send buf[] over RS-232"]
-        INIT --> LOOP --> DRAW --> ABORT --> LOAD --> CONV --> EDIT --> TX --> LOOP
+        INIT["board_init(), module init<br/>last tube from EEPROM · LCD init · splash"]
+        LOOP{{"for (;;)"}}
+        DRAW["if redraw: ui_draw() (4 Hz)"]
+        PANEL["panel_update():<br/>error → abort · load record ·<br/>readings → live[] · save edits ·<br/>render the report line"]
+        TX["if report_request: send the report"]
+        INIT --> LOOP --> DRAW --> PANEL --> TX --> LOOP
     end
 
     ADCI --> M
@@ -207,29 +214,29 @@ flowchart TB
     T2 --> FL
     INT1I --> SEQ
     UARTI --> FL
-    M --> CONV
+    M --> PANEL
     SEQ --> MAIN
     FL --> MAIN
-    EDIT --> SET
+    PANEL --> SET
 ```
 
 ### Measurement sequencer
 
-`start` is a countdown in 250 ms ticks. `TIMER2_COMP_vect` compares it with
-fixed points in the sequence:
+The sequencer counts down in 250 ms steps. Each action runs at a named
+point (`enum seq_point` in [`sequencer.h`](avt5529/sequencer.h)):
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> Idle
-    Idle --> Warmup: short press (adr = 0)
-    Warmup --> Bias: tuh elapsed (1–9 min)
-    Bias --> Slope: Ug1 = Ug − 1.1 V, Ua, Ug2 on
-    Slope --> Resistance: Ia at Ug − 1.1 V and Ug + 1.1 V → S
+    Idle --> Warmup: click (cursor on the slot number)
+    Warmup --> Bias: warm-up elapsed (1–9 min)
+    Bias --> Slope: Ug1 slightly more negative, Ua, Ug2 on
+    Slope --> Resistance: Ia at both grid voltages → S
     Resistance --> Report: Ia at Ua − 10 V and Ua + 10 V → R, K
     Report --> RampDown: LCD latch + RS-232
     RampDown --> Hold: Ug2, Ua off, Ug1 = −24 V, beep
-    Hold --> Slope: short press (re-measure, heater still on)
+    Hold --> Slope: click (re-measure, heater still on)
     Hold --> Idle: encoder turn → heater off
     Warmup --> RampDown: error or encoder turn
     Slope --> RampDown: error
@@ -290,13 +297,39 @@ It also prints the memory usage. To treat warnings as errors, add `-DWERROR=ON`.
 
 The Atmel Studio 7 project (`avt5529/avt5529.cproj`) is still there for Windows users.
 
-GitHub Actions builds every push and pull request
-([.github/workflows/build.yml](.github/workflows/build.yml)). The `.hex`, `.eep`,
-`.elf` and `.map` files are uploaded as build artifacts.
+### Unit tests
+
+The logic modules also build for the PC, with fakes for the hardware and for
+`<avr/pgmspace.h>` and `<avr/eeprom.h>`. The tests run with AddressSanitizer
+and UndefinedBehaviorSanitizer. You need a host C compiler and CMake:
+
+```sh
+cmake -B build-tests -DLAMPTEST_TESTS=ON
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+```
+
+The tests cover:
+
+* **Golden checks.** Every unit conversion, the S/R/K arithmetic and the heater
+  regulator are compared, exhaustively or over millions of inputs, with
+  verbatim copies of the original formulas ([`tests/legacy.h`](avt5529/tests/legacy.h)).
+* **ADC scan.** A simulated free-running ADC checks the channel order,
+  the averaging, the U<sub>g1</sub> pump, the trips, the ramps, auto-range and over-temperature.
+* **Sequencer.** A full measurement on a model triode checks the step order,
+  the S/R/K results, the beeps, hold, re-measure, abort and errors.
+* **User interface.** The button debounce, cursor movement and value limits,
+  section switching, EEPROM saves, power-supply mode, and the exact report line.
+* **Tube database.** Every record is valid, and every twin-tube section 1 is
+  followed by its section 2.
+
+GitHub Actions builds the firmware and runs the unit tests on every push and
+pull request ([.github/workflows/build.yml](.github/workflows/build.yml)).
+The `.hex`, `.eep`, `.elf` and `.map` files are uploaded as build artifacts.
 
 ### Flashing
 
-The fuse values come from `definitions.h`:
+The fuse values are listed in `board.h`:
 
 * **Low fuse 0xEF**: external crystal, BOD off.
 * **High fuse 0xC9**: JTAG off, which is required because PORTC drives the LCD. SPI programming stays on, and CKOPT is set.
@@ -323,10 +356,25 @@ These bugs were found and fixed while bringing the avr-gcc port up:
 | The refactored `fp2ascii()` never advanced past the `'.'`, and it blanked *every* `0` in the integer part | Displayed values were wrong (`12.6` → `126`, `100` → `1  `) and the LCD fields were misaligned | Rewrite it to match the original formatting, and check it on the host |
 | `temp_str[]` was defined in a header; prototypes were missing | Link error with `-fno-common` (GCC ≥ 10) and implicit-declaration warnings | Move it into `fp2ascii()` and add the prototypes |
 
+### Refactoring
+
+The original single 1500-line source was split into the modules listed in
+[Firmware structure](#firmware-structure), and all comments were translated
+into English. The behaviour is unchanged, except for these fixes:
+
+| Change | Why |
+|---|---|
+| The sequencer step, the warm-up time, the ADC averages and the power-supply set points are read and written with interrupts blocked | A 16-bit value shared with an interrupt could be torn |
+| S is reported as 99.9 when ΔU<sub>g</sub> = 0 | It was a division by zero |
+| The LCD enable pulse lasts 8 cycles (500 ns) | `RJMP .+2` skipped every other delay, which made the pulse about 310 ns, under the HD44780 minimum of 450 ns |
+| EEPROM edits use `eeprom_update_*()` | Saving an unchanged value no longer wears the EEPROM |
+| The last selected slot is a member of the EEPROM layout, with a default of 0 | Its address no longer depends on a cast. The `.eep` image is one byte longer, and the user table is byte-identical. |
+| The two lookup tables are stored in flash | Saves 150 bytes of RAM. The firmware now uses 10.1 kB of flash (was 12.5 kB) and 514 bytes of RAM (was 550). |
+
 ### Known limitations (not changed)
 
-* Some 16-bit variables shared with ISRs, such as `start`, are read in the main loop without blocking interrupts.
-* The S calculation only guards against ΔI<sub>a</sub> = 0, not against ΔU<sub>g</sub> = 0.
+* S and R use unsigned differences. If noise makes I<sub>a</sub> go the wrong way between the two readings, the result wraps around and shows as nonsense.
+* Power-supply mode shows `* OVERHEAT Warning *` on the last line, as in the original firmware.
 
 ## Links
 
