@@ -63,11 +63,85 @@ measurement or leave the results screen, which switches off the heater.
 * **MCU**: ATmega32 with a 16 MHz crystal. The schematic symbol is the pin-compatible ATmega16A-P.
 * **Display**: 4×20 HD44780 LCD in 4-bit mode.
 * **Input**: rotary encoder with a push button, and a buzzer.
-* **Heater supply**: PWM-regulated (OC0). It runs in voltage mode, or in current mode for series-heater tubes.
-* **U<sub>a</sub> and U<sub>g2</sub>**: two 300 V PWM step-up converters (OC1B, OC1A) with IRF740 switches and TC4426 drivers.
-* **U<sub>g1</sub>**: negative bias from an MCU-clocked charge pump (`CLKUG1`). It is regulated sample-by-sample in the ADC ISR.
-* **Relays**: one relay switches between anode sections (UA1/UA2). Another switches the I<sub>a</sub> shunt (20/200 mA).
+* **Heater supply**: a PWM step-down converter from the +15 V rail (OC0 → TC4426 → IRF9540N, 1 mH inductor, 1N5822). It runs in voltage mode, or in current mode for series-heater tubes.
+* **U<sub>a</sub> and U<sub>g2</sub>**: two linear series regulators fed from a +335 V rail. A filtered PWM signal (OC1B, OC1A) sets the voltage, an LM358 drives an IRF740 pass transistor, and a BD139 limits the current. Their currents are measured on the high side with an LM358 and an MPSA94.
+* **U<sub>g1</sub>**: negative bias from a charge pump, clocked by the MCU (`CKUG1`) through a TC4426. It is regulated sample-by-sample in the ADC ISR.
+* **Relays**: one relay switches between anode sections (A1/A2). Another switches the I<sub>a</sub> shunt (20/200 mA).
+* **Power**: a +15 V rail with a 10 000 µF reservoir capacitor, and an LM317 that makes +5 V for the logic.
 * **Interface**: RS-232 through a MAX202, 9600 8N1.
+
+### Block diagram
+
+```mermaid
+flowchart LR
+    subgraph PWR["Power supply"]
+        HV["+335 V rail"]
+        V15["+15 V rail"]
+        V5["LM317 → +5 V"]
+        V15 --> V5
+    end
+
+    subgraph UI["User interface"]
+        LCD["LCD 4×20<br/>HD44780"]
+        ENC["Rotary encoder<br/>+ button"]
+        BUZ["Buzzer"]
+        RS["MAX202 → DE-9<br/>RS-232"]
+    end
+
+    MCU(["ATmega32<br/>16 MHz"])
+
+    subgraph HEAT["Heater"]
+        BUCK["Step-down converter<br/>TC4426 + IRF9540N + 1 mH"]
+    end
+    subgraph GRID["Control grid"]
+        PUMP["Negative charge pump<br/>TC4426"]
+    end
+    subgraph ANODE["Anode"]
+        REGA["Series regulator<br/>LM358 + IRF740"]
+        ISA["High-side I sense<br/>LM358 + MPSA94"]
+        SEL["Relay A1 / A2"]
+        RNG["Relay 20 / 200 mA"]
+    end
+    subgraph SCREEN["Screen grid"]
+        REGG2["Series regulator<br/>LM358 + IRF740"]
+        ISG2["High-side I sense<br/>LM358 + MPSA94"]
+    end
+
+    TUBE[["Tube under test"]]
+    LM35["LM35<br/>heatsink temp"]
+
+    V15 --> BUCK
+    V15 --> PUMP
+    HV --> REGA
+    HV --> REGG2
+
+    MCU -- "OC0 PWM" --> BUCK
+    MCU -- "CKUG1 clock" --> PUMP
+    MCU -- "OC1B PWM" --> REGA
+    MCU -- "OC1A PWM" --> REGG2
+    MCU -- "SELA" --> SEL
+    MCU -- "RGNIA" --> RNG
+
+    BUCK -- "H1/H2" --> TUBE
+    PUMP -- "G1: 0…−24 V" --> TUBE
+    REGA --> ISA --> SEL -- "A1 / A2" --> TUBE
+    REGG2 --> ISG2 -- "G2" --> TUBE
+
+    BUCK -. "UH, IH" .-> MCU
+    PUMP -. "UG1" .-> MCU
+    ISA -. "UA, IA" .-> MCU
+    RNG -.- ISA
+    ISG2 -. "UG2, IG2" .-> MCU
+    LM35 -. "TS" .-> MCU
+
+    MCU <--> LCD
+    ENC --> MCU
+    MCU --> BUZ
+    MCU <--> RS
+```
+
+Solid arrows are control and power paths. Dotted arrows are the analog
+measurements that go to the ADC (port A).
 
 ### MCU pinout
 
@@ -77,6 +151,90 @@ measurement or leave the results screen, which switches off the heater.
 | **B** | SCK | MISO | MOSI | K1 | U<sub>h</sub> PWM (OC0) | U<sub>g1</sub> pump clock | Anode select | I<sub>a</sub> range |
 | **C** | LCD D7 | LCD D6 | LCD D5 | LCD D4 | LCD E | LCD RS | SDA | SCL |
 | **D** | Buzzer (OC2) | Encoder DIR | U<sub>g2</sub> PWM (OC1A) | U<sub>a</sub> PWM (OC1B) | Encoder CLK (INT1) | Encoder button | TXD | RXD |
+
+## Firmware structure
+
+| File | Contents |
+|---|---|
+| [`avt5229.c`](avt5529/avt5229.c) | `main()`, the interrupt handlers, the measurement sequencer, unit conversion and the editor |
+| [`lcd.c`](avt5529/lcd.c) | HD44780 driver in 4-bit mode, and blinking of the field being edited |
+| [`util.c`](avt5529/util.c) | Number formatting, the UART driver, and the `ESC` handler |
+| [`lamprom.h`](avt5529/lamprom.h) | `katalog_t` record, the flash tube table and the EEPROM user table |
+| [`definitions.h`](avt5529/definitions.h) | Pin macros, timing constants, ADC channels and error flags |
+
+The firmware is interrupt-driven. The ISRs do all the real-time work: ADC
+sampling, regulation, protections and the measurement timing. The main loop
+only converts the averaged readings into physical units, refreshes the LCD,
+saves edits to EEPROM and sends reports over the serial port. Most of the state
+is shared through global variables.
+
+```mermaid
+flowchart TB
+    subgraph ISRS["Interrupts"]
+        direction TB
+        ADCI["<b>ADC_vect</b> · ~9.6 kHz, free-running<br/>14-step channel scan: Ug1 is read on every other<br/>conversion and drives the charge-pump clock<br/>(bang-bang), the other conversions cycle through<br/>Temp, Ih, Uh, Ua, Ia, Ug2 and Ig2<br/>· Ih / Ia / Ig2 overcurrent trip → err<br/>· ramp OCR1B (Ua) / OCR1A (Ug2) by 1 step toward the set value<br/>· Ia auto-range 20 ↔ 200 mA<br/>· every 64 scans (~10 Hz): latch averages,<br/>regulate heater PWM (Uh or Ih), check overtemperature"]
+        T2["<b>TIMER2_COMP_vect</b> · 1 kHz<br/>· delay() tick<br/>· button debounce: short press = start / restart<br/>· every 250 ms: measurement sequencer (start--),<br/>beeps, blink phase, sync = 1"]
+        INT1I["<b>INT1_vect</b> · encoder step<br/>· choose a tube / move between fields<br/>· change the value in the selected field<br/>· turning aborts a measurement"]
+        UARTI["<b>USART_TXC / RXC</b><br/>· TX done flag<br/>· ESC → txen = 1"]
+    end
+
+    subgraph SHARED["Shared state (globals)"]
+        direction LR
+        M["m*adc averages"]
+        SET["uaset, ug2set, ug1set,<br/>uhset, ihset"]
+        SEQ["start, stop, err, adr"]
+        FL["sync, txen, tick_1ms"]
+    end
+
+    subgraph MAIN["main()"]
+        direction TB
+        INIT["ioSetup(): ports, timers, PWM, ADC, UART, WDT<br/>load last tube from EEPROM · LCD init · splash"]
+        LOOP{{"while (1)"}}
+        DRAW["if sync: draw buf[] on the LCD (4 Hz)"]
+        ABORT["if err: force the switch-off sequence"]
+        LOAD["adr == 0: load the tube record<br/>(flash or EEPROM)"]
+        CONV["m*adc → Ug1, Uh, Ih, Ua, Ia, Ug2, Ig2<br/>(vref scaling, shunt corrections)<br/>fp2ascii() → buf[]"]
+        EDIT["Editing: save the changed field to EEPROM<br/>(user slots 81–99)"]
+        TX["if txen: send buf[] over RS-232"]
+        INIT --> LOOP --> DRAW --> ABORT --> LOAD --> CONV --> EDIT --> TX --> LOOP
+    end
+
+    ADCI --> M
+    SET --> ADCI
+    ADCI --> SEQ
+    T2 --> SET
+    T2 --> SEQ
+    T2 --> FL
+    INT1I --> SEQ
+    UARTI --> FL
+    M --> CONV
+    SEQ --> MAIN
+    FL --> MAIN
+    EDIT --> SET
+```
+
+### Measurement sequencer
+
+`start` is a countdown in 250 ms ticks. `TIMER2_COMP_vect` compares it with
+fixed points in the sequence:
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Idle
+    Idle --> Warmup: short press (adr = 0)
+    Warmup --> Bias: tuh elapsed (1–9 min)
+    Bias --> Slope: Ug1 = Ug − 1.1 V, Ua, Ug2 on
+    Slope --> Resistance: Ia at Ug − 1.1 V and Ug + 1.1 V → S
+    Resistance --> Report: Ia at Ua − 10 V and Ua + 10 V → R, K
+    Report --> RampDown: LCD latch + RS-232
+    RampDown --> Hold: Ug2, Ua off, Ug1 = −24 V, beep
+    Hold --> Slope: short press (re-measure, heater still on)
+    Hold --> Idle: encoder turn → heater off
+    Warmup --> RampDown: error or encoder turn
+    Slope --> RampDown: error
+    Resistance --> RampDown: error
+```
 
 ## Tube database
 
