@@ -4,12 +4,12 @@
 #include "lamprom.h"
 
 unsigned char currentLampNum;
-unsigned char tick_1ms; //Used for blocked 1ms delay
+volatile unsigned char sync; // set by TIMER2 every 250ms, polled by main loop
+volatile unsigned char tick_1ms; //Used for blocked 1ms delay
 
 unsigned char
 	d,
 	i,
-	sync,
 	*cwart, cwartmin, cwartmax,
 	adr, adrmin, adrmax,
 	nowa,
@@ -55,7 +55,8 @@ const unsigned char
        // 00   01  02   03   04   05   06    07   08  09   10    11  12   13   14    15  16   17    18   19  20   21    22  23    24  25    26   27  28   29    30  31    32  33   34   35   36
 
 
-unsigned int poptyp = 0;
+// Last selected lamp, kept in the EEPROM byte after the user lamp table
+#define POPTYP ((uint8_t *)sizeof(lampeep))
 
 void readPgmLampData(unsigned char _currentLampNum, katalog_t *lampData)
 {
@@ -943,7 +944,9 @@ int main(void)
 
 	cwartmax = (ELAMP + FLAMP - 1);								 // wszystkie lampy
 	cwart = &currentLampNum;											 // wskaz na Typ
-	currentLampNum = eeprom_read_byte((const unsigned char *)&poptyp); // ustaw na ostatnio aktywny
+	currentLampNum = eeprom_read_byte(POPTYP); // ustaw na ostatnio aktywny
+	if (currentLampNum >= (FLAMP + ELAMP))
+		currentLampNum = 0; // erased EEPROM
 	ADMUX = ADRIH;
 
 	SEI; // wlacz przerwania
@@ -1091,7 +1094,9 @@ int main(void)
 		//***** Wyswietlanie Numeru ***********************************
 		if (adr == 0) // ustawianie numeru
 		{
-			fp2ascii(currentLampNum, 2, 0, &buf[0]);
+			int2asc(currentLampNum, ascii); // always 2 digits, no zero blanking
+			buf[0] = ascii[1];
+			buf[1] = ascii[0];
 			//***** Pobieranie nowej Nazwy ************************************
 			if (currentLampNum < FLAMP)
 			{
@@ -1102,7 +1107,7 @@ int main(void)
 			}
 			else
 			{
-				eeprom_read_block(&lampeep[currentLampNum - FLAMP], &currentLampData, sizeof(katalog_t));
+				eeprom_read_block(&currentLampData, &lampeep[currentLampNum - FLAMP], sizeof(katalog_t));
 				tuh = (currentLampData.name[8] - 27) * 240; // 240 = 1min
 				for (i = 0; i < 9; i++)
 					buf[i + 3] = AZ[(unsigned char)currentLampData.name[i]];
@@ -1115,7 +1120,7 @@ int main(void)
 		{
 			//***** Displaying the edited Name *************************
 			if (czytaj == 1)
-				eeprom_read_block(&lampeep[currentLampNum - FLAMP].name, currentLampData.name, 7);
+				eeprom_read_block(currentLampData.name, lampeep[currentLampNum - FLAMP].name, 7);
 			for (i = 0; i < 9; i++)
 				buf[3 + i] = AZ[(unsigned char)currentLampData.name[i]];
 			czytaj = 0;
@@ -1123,7 +1128,7 @@ int main(void)
 				zapisz = 1;
 			if ((nodus == DMIN) && (zapisz == 1))
 			{
-				eeprom_write_word((unsigned int *)&(lampeep[currentLampNum - FLAMP].name[adr - 1]), currentLampData.name[adr - 1]);
+				eeprom_write_byte(&lampeep[currentLampNum - FLAMP].name[adr - 1], currentLampData.name[adr - 1]);
 				zapisz = 0;
 			}
 		}
@@ -1164,7 +1169,7 @@ int main(void)
 				}
 				if (currentLampNum >= FLAMP) // ELAMP
 				{
-					eeprom_write_word((unsigned int *)&(lampeep[currentLampNum - FLAMP].ug1def), currentLampData.ug1def);
+					eeprom_write_byte(&lampeep[currentLampNum - FLAMP].ug1def, currentLampData.ug1def);
 				}
 			}
 		}
@@ -1204,7 +1209,7 @@ int main(void)
 				}
 				if (currentLampNum >= FLAMP) // ELAMP
 				{
-					eeprom_write_word((unsigned int *)&(lampeep[currentLampNum - FLAMP].uhdef), currentLampData.uhdef);
+					eeprom_write_byte(&lampeep[currentLampNum - FLAMP].uhdef, currentLampData.uhdef);
 				}
 			}
 		}
@@ -1234,13 +1239,12 @@ int main(void)
 				}
 				if (currentLampNum >= FLAMP) // ELAMP
 				{
-					eeprom_write_word((unsigned int *)&(lampeep[currentLampNum - FLAMP].ihdef), currentLampData.ihdef);
+					eeprom_write_byte(&lampeep[currentLampNum - FLAMP].ihdef, currentLampData.ihdef);
 				}
 			}
 		}
 		//***** Wyswietlanie Ih ***************************************
-		fp2ascii(licz, 3, 0, &buf[18]);
-		buf[21] = '0';
+		fp2ascii(licz * 10, 4, 0, &buf[18]); // stored in 10mA units
 		//***** Ustawianie Ua *****************************************
 		licz = muaadc;
 		licz *= vref;
@@ -1419,7 +1423,7 @@ int main(void)
 				zapisz = 0;
 				if (currentLampNum >= FLAMP) // ELAMP
 				{
-					eeprom_write_word(&(lampeep[currentLampNum - FLAMP].rdef), (unsigned int)(currentLampData.rdef));
+					eeprom_write_word(&lampeep[currentLampNum - FLAMP].rdef, currentLampData.rdef);
 				}
 			}
 		}
@@ -1450,7 +1454,7 @@ int main(void)
 		//***** Wyslanie pomiarow do PC *******************************
 		if (getTxen())
 		{
-			eeprom_write_word(&poptyp, currentLampNum);
+			eeprom_update_byte(POPTYP, currentLampNum);
 			cstr2rs("\r\n");
 			for (i = 0; i < 62; i++)
 			{

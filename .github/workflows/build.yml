@@ -1,0 +1,33 @@
+name: Build firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  avt5229:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install AVR toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-avr binutils-avr avr-libc cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DWERROR=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: avt5229-firmware
+          path: |
+            build/avt5529/avt5229.hex
+            build/avt5529/avt5229.eep
+            build/avt5529/avt5229.elf
+            build/avt5529/avt5229.map

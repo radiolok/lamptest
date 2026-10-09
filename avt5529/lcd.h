@@ -3,6 +3,8 @@
 
     #include "definitions.h"
 
+    void delay(unsigned char opoz); // defined in avt5229.c
+
     void lcdBlink(unsigned char flag);
 
     void cmd2lcd(char rs, char bajt);

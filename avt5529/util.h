@@ -3,10 +3,11 @@
 
 #include "definitions.h"
 
-unsigned char temp_str[5];
-
 void cstr2rs(const char *q);
 void char2rs(unsigned char data);
+
+void setTxen(const unsigned char state);
+unsigned char getTxen(void);
 
 void int2asc(unsigned int liczba, unsigned char* ascii);
 
