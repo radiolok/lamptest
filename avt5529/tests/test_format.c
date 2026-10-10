@@ -56,7 +56,7 @@ static void fixed_matches_printf(void)
             limit *= 10;
         int bad = 0;
         for (unsigned v = 0; v < limit; v++) {
-            char got[8] = { 0 }, want[16];
+            char got[8] = { 0 }, want[2 * 256 + 8];     // room for any width
             fmt_fixed((uint16_t)v, f[i].integral, f[i].frac, got);
             if (f[i].frac)
                 snprintf(want, sizeof(want), "%*u.%0*u", f[i].integral, v / scale,
