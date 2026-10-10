@@ -1,0 +1,86 @@
+name: Build and test firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  avt5229:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install AVR toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-avr binutils-avr avr-libc cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DWERROR=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: avt5229-firmware
+          path: |
+            build/firmware/avt5229.hex
+            build/firmware/avt5229.eep
+            build/firmware/avt5229.elf
+            build/firmware/avt5229.map
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build
+
+      - name: Configure
+        run: cmake -B build-tests -G Ninja -DLAMPTEST_TESTS=ON -DWERROR=ON
+
+      - name: Build
+        run: cmake --build build-tests
+
+      - name: Run unit tests
+        run: ctest --test-dir build-tests --output-on-failure
+
+  # Publish the firmware once the build and the tests pass:
+  # - every push to master replaces the "latest" pre-release
+  # - a v* tag creates a permanent release
+  release:
+    needs: [avt5229, tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency: release-${{ github.ref }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: avt5229-firmware
+          path: fw
+
+      - name: Update the latest pre-release
+        if: github.ref == 'refs/heads/master'
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest fw/avt5229.hex fw/avt5229.eep fw/avt5229.elf \
+            --prerelease --target "$GITHUB_SHA" \
+            --title "Latest build (master, ${GITHUB_SHA::7})" \
+            --notes "Automatic build of master at $GITHUB_SHA. Replaced on every push; use a versioned release for a stable firmware."
+
+      - name: Create a versioned release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          gh release create "$GITHUB_REF_NAME" fw/avt5229.hex fw/avt5229.eep fw/avt5229.elf \
+            --title "$GITHUB_REF_NAME" --generate-notes

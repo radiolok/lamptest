@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="1240" height="700" viewBox="0 0 1240 700" font-family="Lato, 'DejaVu Sans', sans-serif">
+<defs><marker id="a0f766e" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f766e"/></marker><marker id="a1d4ed8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker><marker id="a15803d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#15803d"/></marker><marker id="a7e22ce" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7e22ce"/></marker><marker id="ac2410c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="20" y="34" font-size="17" font-weight="700" text-anchor="start" fill="#1f2937" >Interrupts</text>
+<text x="116" y="34" font-size="14" font-weight="400" text-anchor="start" fill="#6b7280" >(main.c) — all real-time work</text>
+<text x="640" y="34" font-size="17" font-weight="700" text-anchor="start" fill="#1f2937" >Shared state</text>
+<text x="758" y="34" font-size="14" font-weight="400" text-anchor="start" fill="#6b7280" >(app.h)</text>
+<text x="930" y="34" font-size="17" font-weight="700" text-anchor="start" fill="#1f2937" >Main loop</text>
+<text x="1022" y="34" font-size="14" font-weight="400" text-anchor="start" fill="#6b7280" >(main.c)</text>
+<rect x="20" y="56" width="400" height="218" rx="8" fill="#ffffff" stroke="#1d4ed8" stroke-width="1.6" />
+<rect x="20" y="56" width="6" height="218" rx="3" fill="#1d4ed8" stroke="#1d4ed8" stroke-width="0" />
+<text x="38" y="81" font-size="15" font-weight="700" text-anchor="start" fill="#1d4ed8" >ADC_vect · 9.6 kHz</text>
+<text x="38" y="101" font-size="13" font-weight="400" text-anchor="start" fill="#6b7280" font-family="DejaVu Sans Mono, monospace">adc_scan_sample()</text>
+<text x="38" y="123" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >14-step scan: every other conversion reads U<tspan dy="3.8" font-size="10.3">g1</tspan></text>
+<text x="38" y="142" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >and clocks the charge pump; the rest cycle through</text>
+<text x="38" y="161" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >T, I<tspan dy="3.8" font-size="10.3">h</tspan><tspan dy="-3.8">, U</tspan><tspan dy="3.8" font-size="10.3">h</tspan><tspan dy="-3.8">, U</tspan><tspan dy="3.8" font-size="10.3">a</tspan><tspan dy="-3.8">, I</tspan><tspan dy="3.8" font-size="10.3">a</tspan><tspan dy="-3.8">, U</tspan><tspan dy="3.8" font-size="10.3">g2</tspan><tspan dy="-3.8">, I</tspan><tspan dy="3.8" font-size="10.3">g2</tspan></text>
+<text x="38" y="180" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• over-current trips → err</text>
+<text x="38" y="199" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• ramp U<tspan dy="3.8" font-size="10.3">a</tspan><tspan dy="-3.8"> and U</tspan><tspan dy="3.8" font-size="10.3">g2</tspan><tspan dy="-3.8"> PWM toward the set points</tspan></text>
+<text x="38" y="218" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• I<tspan dy="3.8" font-size="10.3">a</tspan><tspan dy="-3.8"> auto-range 20 ↔ 200 mA</tspan></text>
+<text x="38" y="237" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• every 64 scans: latch the averages, regulate</text>
+<text x="38" y="256" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >   the heater, check the heatsink temperature</text>
+<rect x="20" y="296" width="400" height="103" rx="8" fill="#ffffff" stroke="#15803d" stroke-width="1.6" />
+<rect x="20" y="296" width="6" height="103" rx="3" fill="#15803d" stroke="#15803d" stroke-width="0" />
+<text x="38" y="321" font-size="15" font-weight="700" text-anchor="start" fill="#15803d" >TIMER2_COMP_vect · 1 kHz</text>
+<text x="38" y="343" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• delay_ms() tick</text>
+<text x="38" y="362" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• button_poll(): a click starts or repeats a measurement</text>
+<text x="38" y="381" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• every 250 ms: seq_tick(), LCD blink, set redraw</text>
+<rect x="20" y="421" width="400" height="123" rx="8" fill="#ffffff" stroke="#7e22ce" stroke-width="1.6" />
+<rect x="20" y="421" width="6" height="123" rx="3" fill="#7e22ce" stroke="#7e22ce" stroke-width="0" />
+<text x="38" y="446" font-size="15" font-weight="700" text-anchor="start" fill="#7e22ce" >INT1_vect · encoder</text>
+<text x="38" y="466" font-size="13" font-weight="400" text-anchor="start" fill="#6b7280" font-family="DejaVu Sans Mono, monospace">editor_on_encoder()</text>
+<text x="38" y="488" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• choose a tube, move between fields</text>
+<text x="38" y="507" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• change the value under the cursor</text>
+<text x="38" y="526" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• switch section, abort a measurement</text>
+<rect x="20" y="566" width="400" height="85" rx="8" fill="#ffffff" stroke="#c2410c" stroke-width="1.6" />
+<rect x="20" y="566" width="6" height="85" rx="3" fill="#c2410c" stroke="#c2410c" stroke-width="0" />
+<text x="38" y="591" font-size="15" font-weight="700" text-anchor="start" fill="#c2410c" >USART_TXC / RXC</text>
+<text x="38" y="611" font-size="13" font-weight="400" text-anchor="start" fill="#6b7280" font-family="DejaVu Sans Mono, monospace">uart.c</text>
+<text x="38" y="633" font-size="13.5" font-weight="400" text-anchor="start" fill="#374151" >• TX done; ESC received → report_request</text>
+<rect x="640" y="90" width="210" height="62" rx="8" fill="#f5f6f8" stroke="#9ca3af" stroke-width="1.5" />
+<text x="654" y="115" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >ADC averages</text>
+<text x="654" y="136" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >sums of 64 samples</text>
+<rect x="640" y="230" width="210" height="62" rx="8" fill="#f5f6f8" stroke="#9ca3af" stroke-width="1.5" />
+<text x="654" y="255" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >Set points  sp</text>
+<text x="654" y="276" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >U<tspan dy="3.6" font-size="9.9">g1</tspan><tspan dy="-3.6">, U</tspan><tspan dy="3.6" font-size="9.9">h</tspan><tspan dy="-3.6">, I</tspan><tspan dy="3.6" font-size="9.9">h</tspan><tspan dy="-3.6">, U</tspan><tspan dy="3.6" font-size="9.9">a</tspan><tspan dy="-3.6">, U</tspan><tspan dy="3.6" font-size="9.9">g2</tspan></text>
+<rect x="640" y="370" width="210" height="62" rx="8" fill="#f5f6f8" stroke="#9ca3af" stroke-width="1.5" />
+<text x="654" y="395" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >Sequencer, errors</text>
+<text x="654" y="416" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >step, err, lamp, field</text>
+<rect x="640" y="540" width="210" height="62" rx="8" fill="#f5f6f8" stroke="#9ca3af" stroke-width="1.5" />
+<text x="654" y="565" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >Flags</text>
+<text x="654" y="586" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >redraw, report_request</text>
+<rect x="930" y="56" width="290" height="98" rx="8" fill="#e6f6f5" stroke="#3a9d97" stroke-width="1.5" />
+<text x="944" y="81" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >Start-up</text>
+<text x="944" y="102" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >board and module init</text>
+<text x="944" y="120" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >last tube from EEPROM</text>
+<text x="944" y="138" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >LCD init, splash screen</text>
+<rect x="930" y="200" width="290" height="62" rx="8" fill="#e6f6f5" stroke="#3a9d97" stroke-width="1.5" />
+<text x="944" y="225" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" font-family="DejaVu Sans Mono, monospace">ui_draw()</text>
+<text x="944" y="246" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >if redraw: 4 Hz refresh</text>
+<rect x="930" y="300" width="290" height="136" rx="8" fill="#e6f6f5" stroke="#3a9d97" stroke-width="1.5" />
+<text x="944" y="325" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" font-family="DejaVu Sans Mono, monospace">panel_update()</text>
+<text x="944" y="346" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >error → abort the measurement</text>
+<text x="944" y="364" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >load the selected record</text>
+<text x="944" y="382" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >readings → live[]</text>
+<text x="944" y="400" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >save edits to EEPROM</text>
+<text x="944" y="418" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >build the report line</text>
+<rect x="930" y="474" width="290" height="62" rx="8" fill="#e6f6f5" stroke="#3a9d97" stroke-width="1.5" />
+<text x="944" y="499" font-size="15" font-weight="700" text-anchor="start" fill="#1f2937" >send report</text>
+<text x="944" y="520" font-size="13" font-weight="400" text-anchor="start" fill="#374151" >if report_request</text>
+<path d="M990,154 L990,200" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M990,262 L990,300" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M990,436 L990,474" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M1190,536 L1190,566 L1226,566 L1226,231 L1220,231" fill="none" stroke="#0f766e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<text x="1184" y="586" font-size="13" font-weight="700" text-anchor="end" fill="#0f766e" font-family="DejaVu Sans Mono, monospace">for (;;)</text>
+<path d="M420,116 L448,116 L448,121 L640,121" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a1d4ed8)"/>
+<path d="M420,344 L472,344 L472,274 L640,274" fill="none" stroke="#15803d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a15803d)"/>
+<path d="M420,384 L496,384 L496,560 L640,560" fill="none" stroke="#15803d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a15803d)"/>
+<path d="M420,364 L520,364 L520,402 L640,402" fill="none" stroke="#15803d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a15803d)"/>
+<path d="M420,196 L544,196 L544,386 L640,386" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a1d4ed8)"/>
+<path d="M640,248 L568,248 L568,156 L420,156" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a1d4ed8)"/>
+<path d="M420,491 L592,491 L592,418 L640,418" fill="none" stroke="#7e22ce" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a7e22ce)"/>
+<path d="M420,616 L616,616 L616,584 L640,584" fill="none" stroke="#c2410c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#ac2410c)"/>
+<path d="M930,360 L868,360 L868,261 L850,261" fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M850,121 L882,121 L882,330 L930,330" fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M850,390 L896,390 L896,231 L930,231" fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M850,414 L910,414 L910,400 L930,400" fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<path d="M850,571 L924,571 L924,505 L930,505" fill="none" stroke="#0f766e" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#a0f766e)"/>
+<text x="640" y="650" font-size="13" font-weight="400" text-anchor="start" fill="#6b7280" >Arrows point from the writer to the reader;</text>
+<text x="640" y="669" font-size="13" font-weight="400" text-anchor="start" fill="#6b7280" >the colour shows which context does it.</text>
+</svg>
