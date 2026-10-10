@@ -7,15 +7,37 @@ A modern MCU-based tester for vacuum tubes.
 This repository is based on the Polish **AVT5229** vacuum tube tester
 ("Miernik lamp elektronowych", firmware "VTTester 1.16"). It contains:
 
-* **`firmware/`**: the AVR firmware, ported from the original ICCAVR sources to avr-gcc
-* **`hardware/`**: a KiCad 9 redraw of the schematic and PCB, with 3D models
-* **`docs/`**: the original magazine article ([`AVT5229.pdf`](docs/AVT5229.pdf), in Polish), its [English translation](docs/AVT5229_en.md) and images
+* the AVR firmware, ported from the original ICCAVR sources to avr-gcc
+* a KiCad 9 redraw of the schematic and PCB, with 3D models
+* the original magazine article ([`AVT5229.pdf`](docs/AVT5229.pdf), in Polish) and its [English translation](docs/AVT5229_en.md)
 
 ![PCB, 3D view](docs/images/pcb_iso.png)
 
 | Top view | Schematic |
 |---|---|
 | ![PCB top](docs/images/pcb_top.png) | [![Schematic](docs/images/schematic.svg)](docs/images/schematic.svg) |
+
+## Repository layout
+
+```
+firmware/             AVR firmware (C, avr-gcc)
+  tests/              host unit tests, with fakes for the hardware
+  avt5529.cproj       Atmel Studio 7 project
+hardware/             KiCad 9 project: avt.kicad_sch, avt.kicad_pcb
+  3d/                 STEP models referenced by the PCB
+docs/
+  AVT5229.pdf         original article (Polish)
+  AVT5229_en.md       English translation
+  images/             photos, article figures, PCB renders and diagrams
+  diagrams/           diagram sources (make_diagrams.py)
+cmake/                avr-gcc toolchain file
+```
+
+The PCB refers to the models in `hardware/3d/` as `${KIPRJMOD}/3d/...`, so the
+project opens with its 3D view intact from any location. The README diagrams
+are drawn by [`docs/diagrams/make_diagrams.py`](docs/diagrams/make_diagrams.py).
+After editing it, run `python3 docs/diagrams/make_diagrams.py` to regenerate the
+SVGs and the PNGs (it needs `rsvg-convert`, package `librsvg2-bin`).
 
 ## What it does
 
@@ -72,76 +94,11 @@ measurement or leave the results screen, which switches off the heater.
 
 ### Block diagram
 
-```mermaid
-flowchart LR
-    subgraph PWR["Power supply"]
-        HV["+335 V rail"]
-        V15["+15 V rail"]
-        V5["LM317 → +5 V"]
-        V15 --> V5
-    end
+![Block diagram](docs/images/block_diagram.png)
 
-    subgraph UI["User interface"]
-        LCD["LCD 4×20<br/>HD44780"]
-        ENC["Rotary encoder<br/>+ button"]
-        BUZ["Buzzer"]
-        RS["MAX202 → DE-9<br/>RS-232"]
-    end
-
-    MCU(["ATmega32<br/>16 MHz"])
-
-    subgraph HEAT["Heater"]
-        BUCK["Step-down converter<br/>TC4426 + IRF9540N + 1 mH"]
-    end
-    subgraph GRID["Control grid"]
-        PUMP["Negative charge pump<br/>TC4426"]
-    end
-    subgraph ANODE["Anode"]
-        REGA["Series regulator<br/>LM358 + IRF740"]
-        ISA["High-side I sense<br/>LM358 + MPSA94"]
-        SEL["Relay A1 / A2"]
-        RNG["Relay 20 / 200 mA"]
-    end
-    subgraph SCREEN["Screen grid"]
-        REGG2["Series regulator<br/>LM358 + IRF740"]
-        ISG2["High-side I sense<br/>LM358 + MPSA94"]
-    end
-
-    TUBE[["Tube under test"]]
-    LM35["LM35<br/>heatsink temp"]
-
-    V15 --> BUCK
-    V15 --> PUMP
-    HV --> REGA
-    HV --> REGG2
-
-    MCU -- "OC0 PWM" --> BUCK
-    MCU -- "CKUG1 clock" --> PUMP
-    MCU -- "OC1B PWM" --> REGA
-    MCU -- "OC1A PWM" --> REGG2
-    MCU -- "SELA" --> SEL
-    MCU -- "RGNIA" --> RNG
-
-    BUCK -- "H1/H2" --> TUBE
-    PUMP -- "G1: 0…−24 V" --> TUBE
-    REGA --> ISA --> SEL -- "A1 / A2" --> TUBE
-    REGG2 --> ISG2 -- "G2" --> TUBE
-
-    BUCK -. "UH, IH" .-> MCU
-    PUMP -. "UG1" .-> MCU
-    ISA -. "UA, IA" .-> MCU
-    RNG -.- ISA
-    ISG2 -. "UG2, IG2" .-> MCU
-    LM35 -. "TS" .-> MCU
-
-    MCU <--> LCD
-    ENC --> MCU
-    MCU --> BUZ
-    MCU <--> RS
-```
-
-Solid arrows are control and power paths. Dotted arrows are the analog
-measurements that go to the ADC (port A).
+Blue arrows are control signals from the MCU, labelled with their pins. Dashed
+orange arrows are the analog measurements that go to the ADC (port A). The red
+tags show which supply rail feeds each block.
 
 ### MCU pinout
 
@@ -178,70 +135,15 @@ is inline register code on the AVR and a fake in the host tests.
 The interrupts do all the real-time work. The main loop only converts the
 averaged readings, refreshes the LCD, saves edits to EEPROM and sends reports.
 
-```mermaid
-flowchart TB
-    subgraph ISRS["Interrupts (main.c)"]
-        direction TB
-        ADCI["<b>ADC_vect</b> → adc_scan_sample() · ~9.6 kHz<br/>14-step scan: Ug1 on every other conversion drives<br/>the charge-pump clock, the others cycle through<br/>Temp, Ih, Uh, Ua, Ia, Ug2 and Ig2<br/>· Ih / Ia / Ig2 over-current trip → err<br/>· ramp the Ua / Ug2 PWM toward the set points<br/>· Ia auto-range 20 ↔ 200 mA<br/>· every 64 scans: latch averages, regulate the<br/>heater, check the temperature"]
-        T2["<b>TIMER2_COMP_vect</b> · 1 kHz<br/>· delay_ms() tick<br/>· button_poll(): a click starts or repeats a measurement<br/>· every 250 ms: seq_tick(), LCD blink, redraw"]
-        INT1I["<b>INT1_vect</b> → editor_on_encoder()<br/>· choose a tube / move between fields<br/>· change the value under the cursor<br/>· switch section / abort"]
-        UARTI["<b>USART_TXC / RXC</b> (uart.c)<br/>· TX done · ESC → report_request"]
-    end
-
-    subgraph SHARED["Shared state (app.h)"]
-        direction LR
-        M["ADC averages<br/>(adc_averages())"]
-        SET["sp: set points"]
-        SEQ["sequencer step, err,<br/>lamp, field"]
-        FL["redraw, report_request"]
-    end
-
-    subgraph MAIN["main()"]
-        direction TB
-        INIT["board_init(), module init<br/>last tube from EEPROM · LCD init · splash"]
-        LOOP{{"for (;;)"}}
-        DRAW["if redraw: ui_draw() (4 Hz)"]
-        PANEL["panel_update():<br/>error → abort · load record ·<br/>readings → live[] · save edits ·<br/>render the report line"]
-        TX["if report_request: send the report"]
-        INIT --> LOOP --> DRAW --> PANEL --> TX --> LOOP
-    end
-
-    ADCI --> M
-    SET --> ADCI
-    ADCI --> SEQ
-    T2 --> SET
-    T2 --> SEQ
-    T2 --> FL
-    INT1I --> SEQ
-    UARTI --> FL
-    M --> PANEL
-    SEQ --> MAIN
-    FL --> MAIN
-    PANEL --> SET
-```
+![Firmware runtime: interrupts, shared state and the main loop](docs/images/firmware_runtime.png)
 
 ### Measurement sequencer
 
 The sequencer counts down in 250 ms steps. Each action runs at a named
-point (`enum seq_point` in [`sequencer.h`](firmware/sequencer.h)):
+point (`enum seq_point` in [`sequencer.h`](firmware/sequencer.h)). The
+diagram shows the outputs and readings against the step number:
 
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> Idle
-    Idle --> Warmup: click (cursor on the slot number)
-    Warmup --> Bias: warm-up elapsed (1–9 min)
-    Bias --> Slope: Ug1 slightly more negative, Ua, Ug2 on
-    Slope --> Resistance: Ia at both grid voltages → S
-    Resistance --> Report: Ia at Ua − 10 V and Ua + 10 V → R, K
-    Report --> RampDown: LCD latch + RS-232
-    RampDown --> Hold: Ug2, Ua off, Ug1 = −24 V, beep
-    Hold --> Slope: click (re-measure, heater still on)
-    Hold --> Idle: encoder turn → heater off
-    Warmup --> RampDown: error or encoder turn
-    Slope --> RampDown: error
-    Resistance --> RampDown: error
-```
+![Measurement sequence timing](docs/images/sequencer_timing.png)
 
 ## Tube database
 
