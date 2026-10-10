@@ -4,7 +4,7 @@
 > **Elektronika Praktyczna** 4/2010 (pp. 32–35) and 5/2010 (pp. 39–43), followed by the full
 > user manual from the EP 5/2010 CD.
 > Authors: **Tomasz Gumny, EP** (tomasz.gumny@ep.com.pl) and **Adam Tatuś** (atatus@poczta.onet.pl).
-> Source: [AVT5229.pdf](../AVT5229.pdf). Figure numbering follows the original.
+> Source: [AVT5229.pdf](AVT5229.pdf). Figure numbering follows the original.
 
 ---
 
@@ -31,7 +31,7 @@
 
 # Part 1
 
-![TTester_LCD vacuum tube tester](img/photo1_tester.jpg)
+![TTester_LCD vacuum tube tester](images/photo1_tester.jpg)
 
 *Tube amplifiers have been enjoying a renaissance for over a decade. Unfortunately, tube quality
 varies, especially for tubes that have been sitting on shelves for many years. The tester presented
@@ -78,7 +78,7 @@ the P-507 (Photo 1) and P-508, or the Czechoslovak BM-215A (Photo 2). Even if yo
 such an instrument with the necessary set of cards, reliable results can only be obtained from these
 decades-old instruments after a thorough overhaul and calibration.
 
-| ![Photo 1. P507 tester](img/fot1_p507.jpg) | ![Photo 2. BM-215 tester](img/fot2_bm215.jpg) |
+| ![Photo 1. P507 tester](images/fot1_p507.jpg) | ![Photo 2. BM-215 tester](images/fot2_bm215.jpg) |
 |:---:|:---:|
 | **Photo 1.** P507 tube tester | **Photo 2.** BM-215 tube tester |
 
@@ -172,7 +172,7 @@ blocks:
 - power block (PWR),
 - test-socket block (TUB).
 
-![Fig. 3. Block diagram of the tester](img/rys3_block_diagram.png)
+![Fig. 3. Block diagram of the tester](images/rys3_block_diagram.png)
 
 **Fig. 3.** Block diagram of the tester. *(Labels: Blok sterowania = control block; Zasilacz
 anodowy = anode supply; Zasilacz siatki = grid supply; Zasilacz żarzenia = heater supply; Blok
@@ -188,10 +188,10 @@ sends them over the serial port.
 
 The microcontroller's memory holds a database of parameters for the 100 most common vacuum tubes.
 
-![Fig. 4. Schematic diagram of the tester](img/rys4_schematic_landscape.png)
+![Fig. 4. Schematic diagram of the tester](images/rys4_schematic_landscape.png)
 
 **Fig. 4.** Schematic diagram of the tester (rotated to landscape for readability; the original
-portrait page is in [img/rys4_schematic.png](img/rys4_schematic.png)).
+portrait page is in [images/rys4_schematic.png](images/rys4_schematic.png)).
 
 ### Heater supply
 
@@ -429,7 +429,7 @@ regulators (line V15A).
 
 # Part 2
 
-![TTester_LCD front view](img/photo2_tester.jpg)
+![TTester_LCD front view](images/photo2_tester.jpg)
 
 *The immediate response from readers to the first part of this article confirms that tube
 amplifiers interest many electronics hobbyists. The second part describes the assembly and bring-up
@@ -444,7 +444,7 @@ Figures 5 and 6 show the tester's assembly drawings. Because SMD parts are used,
 low-power soldering iron, preferably with tip-temperature control. Tweezers for placing and holding
 parts will also be needed.
 
-| ![Fig. 5. Component placement, top layer](img/rys5_top_layer.png) | ![Fig. 6. Component placement, bottom layer](img/rys6_bottom_layer.png) |
+| ![Fig. 5. Component placement, top layer](images/rys5_top_layer.png) | ![Fig. 6. Component placement, bottom layer](images/rys6_bottom_layer.png) |
 |:---:|:---:|
 | **Fig. 5.** Component placement, top layer (shown at 50%) | **Fig. 6.** Component placement, bottom layer (shown at 50%) |
 
@@ -489,9 +489,9 @@ Remember that the tester produces voltages that can be lethal, so the wiring mus
 of adequate insulation. The banana jacks must be of a safe design that prevents accidental contact
 with the metal terminal.
 
-![Fig. 7. Socket wiring diagram](img/rys7_socket_wiring.png)
+![Fig. 7. Socket wiring diagram](images/rys7_socket_wiring.png)
 
-![Fig. 7 (continued). Banana jacks](img/rys7_banana_jacks.png)
+![Fig. 7 (continued). Banana jacks](images/rys7_banana_jacks.png)
 
 **Fig. 7.** Socket wiring diagram. *(A-octal pentode: EL34, 6V6, 6L6; B-noval pentode: EL84, 6P14P;
 C-noval pentode: 6P1P; C(D)-octal pentode: 6SJ7; E-octal pentode: EF86; F-heptal pentode: EL90,
@@ -521,7 +521,7 @@ desk-type enclosures such as the Z-25 (Kradex), G1502 (Pro-Desk) or similar. The
 holes for the banana jacks, LCD, push-button and encoder (Figs. 9 and 10). The legends were made as
 a sticker (Fig. 11).
 
-![Photo 8. Arrangement of subassemblies in the enclosure](img/fot8_inside.jpg)
+![Photo 8. Arrangement of subassemblies in the enclosure](images/fot8_inside.jpg)
 
 **Photo 8.** Arrangement of subassemblies in the enclosure.
 
@@ -722,11 +722,11 @@ Parts shown in red in the original (datasheets on the CD) are marked with †.
 | — | 30 mm piezo |
 | — | 4×20 character LCD |
 
-![Fig. 9. Front-panel drilling for the G1502 enclosure](img/rys9_front_panel_drilling.png)
+![Fig. 9. Front-panel drilling for the G1502 enclosure](images/rys9_front_panel_drilling.png)
 
 **Fig. 9.** Front-panel drilling for the G1502 enclosure (dimensions in mm).
 
-![Fig. 10. Front-panel drilling for the tube sockets, G1502 enclosure](img/rys10_socket_plate_drilling.png)
+![Fig. 10. Front-panel drilling for the tube sockets, G1502 enclosure](images/rys10_socket_plate_drilling.png)
 
 **Fig. 10.** Front-panel drilling for the tube sockets, G1502 enclosure (dimensions in mm).
 
@@ -838,7 +838,7 @@ After connecting the tube to the tester via the adapter, select the correct tube
 catalog (ECL86, PCL86) and start an automatic measurement. The measured system is changed by
 selecting ECL86TJ12 for the triode or ECL86PJ22 for the pentode.
 
-![Fig. 11. Front-panel sticker, 199×129 mm](img/rys11_front_label.png)
+![Fig. 11. Front-panel sticker, 199×129 mm](images/rys11_front_label.png)
 
 **Fig. 11.** Front-panel sticker, size 199×129 mm.
 
@@ -1114,7 +1114,7 @@ eyes") such as the EM84, EM80 and 6AF6G.
 
 ### ECL86 / PCL86 adapter
 
-![Fig. 12. ECL86/PCL86 adapter schematic](img/rys12_adapter_ecl86.png)
+![Fig. 12. ECL86/PCL86 adapter schematic](images/rys12_adapter_ecl86.png)
 
 **Fig. 12.** ECL86/PCL86 adapter schematic (J1: E(P)CL86 noval socket; J2: plug into octal socket A;
 the pentode anode A2P goes to banana jack A2).
@@ -1125,7 +1125,7 @@ selecting ECL86TJ12 for the triode or ECL86PJ22 for the pentode.
 
 ### EM84 / EM87 magic-eye adapter
 
-![Fig. 13. EM84 adapter schematic](img/rys13_adapter_em84.png)
+![Fig. 13. EM84 adapter schematic](images/rys13_adapter_em84.png)
 
 **Fig. 13.** EM84 adapter schematic (J1: EM84/87 noval socket; J2: plug into octal socket A).
 
@@ -1137,13 +1137,13 @@ only in this mode can Ug1 be changed manually, which is needed to watch the bars
   G2 to 250 V.
 - Varying G1 over 0…–24 V (EM84) or 0…–10 V (EM87) changes the height of the bars on the screen.
 
-![Fig. 14. EM84 magic eye during measurement](img/rys14_em84_photo.jpg)
+![Fig. 14. EM84 magic eye during measurement](images/rys14_em84_photo.jpg)
 
 **Fig. 14.** EM84 magic eye during measurement.
 
 ### EM80 magic-eye adapter
 
-![Fig. 15. EM80 adapter schematic](img/rys15_adapter_em80.png)
+![Fig. 15. EM80 adapter schematic](images/rys15_adapter_em80.png)
 
 **Fig. 15.** EM80 adapter schematic (J1: EM80 noval socket; J2: plug into octal socket A).
 
@@ -1155,14 +1155,14 @@ only in this mode can Ug1 be changed manually, which is needed to watch the shad
   G2 to 250 V.
 - Varying G1 over –1…–14 V changes the fill angle of the screen.
 
-![Fig. 16. EM80 magic eye during measurement](img/rys16_em80_photo.jpg)
+![Fig. 16. EM80 magic eye during measurement](images/rys16_em80_photo.jpg)
 
 **Fig. 16.** EM80 magic eye during measurement *(the original caption says "EM84" — a copy-paste
 error in the source)*.
 
 ### 6AF6G magic-eye adapter
 
-![Fig. 17. 6AF6G adapter schematic](img/rys17_adapter_6af6g.png)
+![Fig. 17. 6AF6G adapter schematic](images/rys17_adapter_6af6g.png)
 
 **Fig. 17.** 6AF6G adapter schematic (J1: 6AF6G octal socket; J2: plug into octal socket A).
 
@@ -1173,7 +1173,7 @@ Measuring 6AF6G-type eyes:
 - Varying the **G2(!)** control voltage over 0…80 V (A = 125 V) or 0…160 V (A = 250 V) changes the
   width of the shadows on the screen.
 
-![Fig. 18. 6AF6G magic eye during measurement](img/rys18_6af6g_photo.jpg)
+![Fig. 18. 6AF6G magic eye during measurement](images/rys18_6af6g_photo.jpg)
 
 **Fig. 18.** 6AF6G magic eye during measurement *(the original caption says "EM84")*.
 

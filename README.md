@@ -7,9 +7,9 @@ A modern MCU-based tester for vacuum tubes.
 This repository is based on the Polish **AVT5229** vacuum tube tester
 ("Miernik lamp elektronowych", firmware "VTTester 1.16"). It contains:
 
-* **`avt5529/`**: the AVR firmware, ported from the original ICCAVR sources to avr-gcc
-* **`avt/`**: a KiCad 9 redraw of the schematic and PCB, with 3D models
-* **`avt5529/AVT5229.pdf`**: the original magazine article (in Polish)
+* **`firmware/`**: the AVR firmware, ported from the original ICCAVR sources to avr-gcc
+* **`hardware/`**: a KiCad 9 redraw of the schematic and PCB, with 3D models
+* **`docs/`**: the original magazine article ([`AVT5229.pdf`](docs/AVT5229.pdf), in Polish), its [English translation](docs/AVT5229_en.md) and images
 
 ![PCB, 3D view](docs/images/pcb_iso.png)
 
@@ -154,26 +154,26 @@ measurements that go to the ADC (port A).
 
 ## Firmware structure
 
-The firmware lives in [`avt5529/`](avt5529). The logic modules do not touch
-the hardware. They reach the outputs through [`hal.h`](avt5529/hal.h), which
+The firmware lives in [`firmware/`](firmware). The logic modules do not touch
+the hardware. They reach the outputs through [`hal.h`](firmware/hal.h), which
 is inline register code on the AVR and a fake in the host tests.
 
 | File | Contents |
 |---|---|
-| [`main.c`](avt5529/main.c) | Start-up, the main loop and the interrupt vectors, which only call into the modules |
-| [`adc_scan.c`](avt5529/adc_scan.c) | The 14-step ADC scan: averaging, the U<sub>g1</sub> charge pump, the over-current trips, the U<sub>a</sub>/U<sub>g2</sub> ramps, I<sub>a</sub> auto-range, heater regulation and the over-temperature check |
-| [`control.c`](avt5529/control.c) | Pure control laws used by the scan: ramp, trip filter, range hysteresis and the heater regulator |
-| [`sequencer.c`](avt5529/sequencer.c) | The measurement sequence, with named step points, and the S/R/K calculation |
-| [`button.c`](avt5529/button.c) | Push button debounce: click, held and released |
-| [`editor.c`](avt5529/editor.c) | Encoder handling: moving the cursor, changing values, switching sections and aborting |
-| [`panel.c`](avt5529/panel.c) | Main loop work: loads the selected record, converts the readings, saves edits and renders the report line |
-| [`ui.c`](avt5529/ui.c), [`lcd.c`](avt5529/lcd.c) | LCD screens, and the HD44780 driver in 4-bit mode with field blinking |
-| [`uart.c`](avt5529/uart.c) | Serial output, and the `ESC` request |
-| [`convert.c`](avt5529/convert.c), [`format.c`](avt5529/format.c) | ADC to physical units, S/R/K arithmetic and fixed-point formatting |
-| [`lamp.c`](avt5529/lamp.c), [`lampdb.c`](avt5529/lampdb.c) | The `lamp_t` record and its editable fields; the flash tube table, the EEPROM user table and the last selected slot |
-| [`app.c`](avt5529/app.c) | State shared between the main loop and the interrupts: set points, errors, the selected tube and the live readings |
-| [`config.h`](avt5529/config.h), [`board.h`](avt5529/board.h) | Thresholds and timing constants; pin assignment and the inline hardware access |
-| [`tests/`](avt5529/tests) | Host unit tests |
+| [`main.c`](firmware/main.c) | Start-up, the main loop and the interrupt vectors, which only call into the modules |
+| [`adc_scan.c`](firmware/adc_scan.c) | The 14-step ADC scan: averaging, the U<sub>g1</sub> charge pump, the over-current trips, the U<sub>a</sub>/U<sub>g2</sub> ramps, I<sub>a</sub> auto-range, heater regulation and the over-temperature check |
+| [`control.c`](firmware/control.c) | Pure control laws used by the scan: ramp, trip filter, range hysteresis and the heater regulator |
+| [`sequencer.c`](firmware/sequencer.c) | The measurement sequence, with named step points, and the S/R/K calculation |
+| [`button.c`](firmware/button.c) | Push button debounce: click, held and released |
+| [`editor.c`](firmware/editor.c) | Encoder handling: moving the cursor, changing values, switching sections and aborting |
+| [`panel.c`](firmware/panel.c) | Main loop work: loads the selected record, converts the readings, saves edits and renders the report line |
+| [`ui.c`](firmware/ui.c), [`lcd.c`](firmware/lcd.c) | LCD screens, and the HD44780 driver in 4-bit mode with field blinking |
+| [`uart.c`](firmware/uart.c) | Serial output, and the `ESC` request |
+| [`convert.c`](firmware/convert.c), [`format.c`](firmware/format.c) | ADC to physical units, S/R/K arithmetic and fixed-point formatting |
+| [`lamp.c`](firmware/lamp.c), [`lampdb.c`](firmware/lampdb.c) | The `lamp_t` record and its editable fields; the flash tube table, the EEPROM user table and the last selected slot |
+| [`app.c`](firmware/app.c) | State shared between the main loop and the interrupts: set points, errors, the selected tube and the live readings |
+| [`config.h`](firmware/config.h), [`board.h`](firmware/board.h) | Thresholds and timing constants; pin assignment and the inline hardware access |
+| [`tests/`](firmware/tests) | Host unit tests |
 
 The interrupts do all the real-time work. The main loop only converts the
 averaged readings, refreshes the LCD, saves edits to EEPROM and sends reports.
@@ -223,7 +223,7 @@ flowchart TB
 ### Measurement sequencer
 
 The sequencer counts down in 250 ms steps. Each action runs at a named
-point (`enum seq_point` in [`sequencer.h`](avt5529/sequencer.h)):
+point (`enum seq_point` in [`sequencer.h`](firmware/sequencer.h)):
 
 ```mermaid
 stateDiagram-v2
@@ -287,7 +287,7 @@ cmake -B build            # the AVR toolchain file is picked automatically
 cmake --build build
 ```
 
-The build writes these files to `build/avt5529/`:
+The build writes these files to `build/firmware/`:
 
 * `avt5229.hex`: the flash image
 * `avt5229.eep`: the EEPROM image, with the user tube table
@@ -295,7 +295,7 @@ The build writes these files to `build/avt5529/`:
 
 It also prints the memory usage. To treat warnings as errors, add `-DWERROR=ON`.
 
-The Atmel Studio 7 project (`avt5529/avt5529.cproj`) is still there for Windows users.
+The Atmel Studio 7 project (`firmware/avt5529.cproj`) is still there for Windows users.
 
 ### Unit tests
 
@@ -313,7 +313,7 @@ The tests cover:
 
 * **Golden checks.** Every unit conversion, the S/R/K arithmetic and the heater
   regulator are compared, exhaustively or over millions of inputs, with
-  verbatim copies of the original formulas ([`tests/legacy.h`](avt5529/tests/legacy.h)).
+  verbatim copies of the original formulas ([`tests/legacy.h`](firmware/tests/legacy.h)).
 * **ADC scan.** A simulated free-running ADC checks the channel order,
   the averaging, the U<sub>g1</sub> pump, the trips, the ramps, auto-range and over-temperature.
 * **Sequencer.** A full measurement on a model triode checks the step order,
@@ -336,8 +336,8 @@ The fuse values are listed in `board.h`:
 
 ```sh
 avrdude -c usbasp -p m32 -U lfuse:w:0xEF:m -U hfuse:w:0xC9:m
-avrdude -c usbasp -p m32 -U flash:w:build/avt5529/avt5229.hex:i \
-                         -U eeprom:w:build/avt5529/avt5229.eep:i
+avrdude -c usbasp -p m32 -U flash:w:build/firmware/avt5229.hex:i \
+                         -U eeprom:w:build/firmware/avt5229.eep:i
 ```
 
 > **Note:** writing `.eep` replaces your user-defined tubes (slots 81–99) with

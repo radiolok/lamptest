@@ -27,10 +27,10 @@ jobs:
         with:
           name: avt5229-firmware
           path: |
-            build/avt5529/avt5229.hex
-            build/avt5529/avt5229.eep
-            build/avt5529/avt5229.elf
-            build/avt5529/avt5229.map
+            build/firmware/avt5229.hex
+            build/firmware/avt5229.eep
+            build/firmware/avt5229.elf
+            build/firmware/avt5229.map
 
   tests:
     runs-on: ubuntu-latest

@@ -20424,7 +20424,7 @@
 			(uuid "952ca6d8-bd15-4ee8-989d-2d16678ec144")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/B6P-VH--3DModel-STEP-56544.STEP"
+		(model "${KIPRJMOD}/3d/B6P-VH--3DModel-STEP-56544.STEP"
 			(offset
 				(xyz 9.9 0 0)
 			)
@@ -31897,7 +31897,7 @@
 				(xyz 0 0 0)
 			)
 		)
-		(model "${KIPRJMOD}/RAD-A5723_40.stp"
+		(model "${KIPRJMOD}/3d/RAD-A5723_40.stp"
 			(offset
 				(xyz -4 3.5 20)
 			)
@@ -34069,7 +34069,7 @@
 			(uuid "7b347f14-b346-4cb7-8b13-80cf96a54ab9")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/User Library-toroid_2200LL-102-RC.STEP"
+		(model "${KIPRJMOD}/3d/User Library-toroid_2200LL-102-RC.STEP"
 			(offset
 				(xyz 5 0 0.2)
 			)
@@ -39780,7 +39780,7 @@
 			(uuid "984d93ed-e16c-48bb-aa6d-416894309c74")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/B8P-VH-LF--SN---3DModel-STEP-56544.STEP"
+		(model "${KIPRJMOD}/3d/B8P-VH-LF--SN---3DModel-STEP-56544.STEP"
 			(offset
 				(xyz 14 0 0)
 			)
@@ -40922,7 +40922,7 @@
 			(uuid "f37d372b-81a4-4d24-be32-ab6c1c8fc668")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/User Library-toroid_2200LL-102-RC.STEP"
+		(model "${KIPRJMOD}/3d/User Library-toroid_2200LL-102-RC.STEP"
 			(offset
 				(xyz 5 0 0.2)
 			)
@@ -44339,7 +44339,7 @@
 			(uuid "d3a0442e-7e70-47ad-b44c-aa210606f749")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/3386f-1-103lf.stp"
+		(model "${KIPRJMOD}/3d/3386f-1-103lf.stp"
 			(offset
 				(xyz 1.7 2.5 5)
 			)
@@ -49314,7 +49314,7 @@
 			(uuid "436c90a9-a607-4434-8343-d2849d55f4d2")
 		)
 		(embedded_fonts no)
-		(model "${KIPRJMOD}/Toroidal inductor_wireDia 0.5mm_6 13x8x5mm.STEP"
+		(model "${KIPRJMOD}/3d/Toroidal inductor_wireDia 0.5mm_6 13x8x5mm.STEP"
 			(offset
 				(xyz -14.5 -7 17)
 			)
