@@ -229,6 +229,13 @@ GitHub Actions builds the firmware and runs the unit tests on every push and
 pull request ([.github/workflows/build.yml](.github/workflows/build.yml)).
 The `.hex`, `.eep`, `.elf` and `.map` files are uploaded as build artifacts.
 
+Ready-made firmware is on the [Releases](https://github.com/radiolok/lamptest/releases) page:
+
+* **`latest`**: a pre-release rebuilt from every push to `master`
+  ([`avt5229.hex`](https://github.com/radiolok/lamptest/releases/download/latest/avt5229.hex),
+  [`avt5229.eep`](https://github.com/radiolok/lamptest/releases/download/latest/avt5229.eep)).
+* **`v*`**: a permanent release for every version tag, e.g. `git tag v1.0 && git push origin v1.0`.
+
 ### Flashing
 
 The fuse values are listed in `board.h`:
